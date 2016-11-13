@@ -256,6 +256,7 @@ impl WorkerThread {
         });
     }
 
+    /// Our index amongst the worker threads (ranges from `0..self.num_threads()`).
     #[inline]
     pub fn index(&self) -> usize {
         self.index
