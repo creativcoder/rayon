@@ -8,9 +8,6 @@ use std::thread;
 use thread_pool::{RegistryId, WorkerThread};
 use util::PoisonPanic;
 
-#[cfg(test)]
-mod test;
-
 pub struct Atomic<F, T, R>
     where T: Send,
           R: Send,
@@ -385,3 +382,17 @@ impl<'sender, T, R> Drop for SenderGuard<'sender, T, R>
         }
     }
 }
+
+#[macro_export]
+macro_rules! atomically {
+    ($closure:expr) => {
+        {
+            let atomic = $crate::Atomic::new($closure);
+            move |data| atomic.invoke(data)
+        }
+    }
+}
+
+#[cfg(test)]
+mod test;
+

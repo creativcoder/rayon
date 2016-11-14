@@ -1,8 +1,10 @@
+use prelude::*;
 use Configuration;
 use scope;
 use ThreadPool;
 use super::Atomic;
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::thread;
 
@@ -17,14 +19,14 @@ fn random_threads() {
         value
     }));
 
-    let handles: Vec<_> =
-        (0..THREADS).map(|i| {
-                        let atomic = atomic.clone();
-                        thread::spawn(move || {
-                            atomic.invoke(i);
-                        })
-                    })
-                    .collect();
+    let handles: Vec<_> = (0..THREADS)
+        .map(|i| {
+            let atomic = atomic.clone();
+            thread::spawn(move || {
+                atomic.invoke(i);
+            })
+        })
+        .collect();
 
     for handle in handles {
         handle.join().unwrap();
@@ -80,4 +82,20 @@ fn invoke_atomic<F>(atomic: &Atomic<F, usize, ()>)
             s.spawn(move |_| atomic.invoke(i));
         }
     });
+}
+
+#[test]
+fn build_hashmap_nicely() {
+    const N: usize = 64_000;
+
+    let mut hashmap = HashMap::new();
+    (0..N)
+        .into_par_iter()
+        .map(|i| (i, i + 1))
+        .for_each(atomically!(|(k, v)| {
+            hashmap.insert(k, v);
+        }));
+    for i in 0..N {
+        assert_eq!(hashmap[&i], i + 1);
+    }
 }
